@@ -341,7 +341,7 @@ function Ch2() {
           {data.map((d, i) => {
             const { cx, cy } = toSVG(d.x, d.y);
             const predY = theta0 + theta1 * d.x;
-            const { cy: predCy } = { cy: linScale(predY, yMin, yMax, H - my, my) };
+            const predCy = linScale(predY, yMin, yMax, H - my, my);
             return <line key={i} x1={cx} y1={cy} x2={cx} y2={predCy}
               stroke="rgba(245,158,11,0.35)" strokeWidth="1" strokeDasharray="3,2" />;
           })}
@@ -639,7 +639,7 @@ function Ch5() {
             </text>
           ))}
           {/* Direction arrow */}
-          <text x={W / 2} y={my + 16 || 18} textAnchor="middle" fill={cur.dir === 'forward' ? fwdColor : bwdColor}
+          <text x={W / 2} y={18} textAnchor="middle" fill={cur.dir === 'forward' ? fwdColor : bwdColor}
             fontSize="11" fontWeight="700">
             {cur.dir === 'forward' ? '→ FORWARD PASS →' : '← BACKWARD PASS ←'}
           </text>
