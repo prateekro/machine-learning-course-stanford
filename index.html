@@ -193,7 +193,7 @@ function GradientDescentViz() {
       <div style={{marginTop:10,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
         <button onClick={()=>setRunning(r=>!r)} disabled={converged}
           style={{padding:"6px 16px",background:running?P.rd:P.gn,color:"#000",border:"none",
-            borderRadius:6,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:600,opacity:converged?.5:1}}>
+            borderRadius:6,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:600,opacity:converged?0.5:1}}>
           {running?"⏸ Pause":"▶ Run"}
         </button>
         <button onClick={reset} style={{padding:"6px 14px",background:P.card,color:P.tx,
@@ -570,11 +570,11 @@ const CHAPTER_CONTENT = [
   {
     bullets:[
       "Machine Learning is teaching computers to learn from examples — just like how you learned to recognize faces without anyone giving you a rule-book!",
-      "Arthur Mitchell's formal definition: 'A program learns from experience E on task T if performance P improves with E.' Example: playing chess (task T) more (experience E) and winning more (performance P).",
+      "Arthur Samuel's formal definition: 'A program learns from experience E on task T if performance P improves with E.' Example: playing checkers (task T) more (experience E) and winning more (performance P).",
       "Three main learning styles — Supervised: a teacher gives you answer keys. Unsupervised: you explore data with no answers. Reinforcement: you learn by trial-and-error with reward/penalty feedback.",
       "Supervised Learning uses labeled data — like 10,000 photos each labeled 'cat' or 'dog'. The model learns to tell them apart. Your phone's Face ID works this way!",
       "Unsupervised Learning discovers hidden structure — like Spotify grouping songs into genres it invented by itself, without being told what genres are.",
-      "Reinforcement Learning works like dog training: try action → get reward/penalty → adjust behavior. This is how AlphaGo learned to beat the world chess champion!",
+      "Reinforcement Learning works like dog training: try action → get reward/penalty → adjust behavior. This is how AlphaGo learned to beat the world Go champion!",
     ],
     formula:null,
     tags:["Week 1","Andrew Ng","Coursera"],
