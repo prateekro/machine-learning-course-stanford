@@ -476,8 +476,8 @@ function Ch4() {
   };
   const layers = archs[arch];
   useEffect(() => {
-    const id = setInterval(() => setPulse(p => p + 1), 50);
-    return () => clearInterval(id);
+    const intervalId = setInterval(() => setPulse(p => p + 1), 50);
+    return () => clearInterval(intervalId);
   }, []);
   const W = 380, H = 280;
   const layerX = layers.map((_, li) => linScale(li, 0, layers.length - 1, 60, W - 40));
@@ -1050,7 +1050,7 @@ function Ch9() {
                       const known = ratings[ui][mi];
                       const pred = predicted[ui][mi];
                       if (known !== null) {
-                        return <td key={mi} className="known">{'★'.repeat(known)}</td>;
+                        return <td key={mi} className="known" aria-label={`${known} stars`}>{'★'.repeat(known)}</td>;
                       } else if (pred !== null) {
                         return <td key={mi} className="predicted">{pred.toFixed(1)}★</td>;
                       } else {
