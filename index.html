@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stanford ML Course — Scientific Atlas</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-dark: #0a0e1a;
+      --bg-mid: #0f1729;
+      --bg-card: #131d35;
+      --teal: #00d4aa;
+      --blue: #0ea5e9;
+      --gold: #f59e0b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: rgba(0,212,170,0.15);
+    }
+    body {
+      background: var(--bg-dark);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+    }
+    #root { height: 100vh; display: flex; flex-direction: column; }
+    /* Header */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 100;
+      background: rgba(10,14,26,0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+      backdrop-filter: blur(12px);
+    }
+    .header-title { font-size: 1rem; font-weight: 700; color: var(--teal); letter-spacing: 0.05em; }
+    .header-title span { color: var(--text-muted); font-weight: 400; margin-left: 8px; font-size: 0.85rem; }
+    .header-nav { display: flex; gap: 8px; align-items: center; }
+    .nav-btn {
+      background: rgba(0,212,170,0.1); border: 1px solid var(--border);
+      color: var(--teal); padding: 6px 14px; border-radius: 6px;
+      cursor: pointer; font-size: 0.8rem; font-weight: 600;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { background: rgba(0,212,170,0.2); }
+    .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .chapter-indicator { color: var(--text-muted); font-size: 0.8rem; padding: 0 8px; }
+    /* Sidebar */
+    .sidebar {
+      position: fixed; top: 56px; left: 0; width: 220px; bottom: 0; z-index: 50;
+      background: rgba(15,23,41,0.95);
+      border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 16px 0;
+      backdrop-filter: blur(8px);
+    }
+    .sidebar-section { color: var(--text-muted); font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.1em; padding: 8px 16px 4px; text-transform: uppercase; }
+    .sidebar-link {
+      display: block; padding: 9px 16px; font-size: 0.8rem; color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent;
+      line-height: 1.3;
+    }
+    .sidebar-link:hover { color: var(--text); background: rgba(0,212,170,0.05); }
+    .sidebar-link.active { color: var(--teal); border-left-color: var(--teal);
+      background: rgba(0,212,170,0.08); }
+    .sidebar-link .ch-num { color: var(--text-muted); font-size: 0.7rem; display: block; margin-bottom: 2px; }
+    /* Main content */
+    .main {
+      position: fixed; top: 56px; left: 220px; right: 0; bottom: 0;
+      overflow-y: auto; padding: 20px;
+    }
+    /* Chapter layout */
+    .chapter-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+      min-height: calc(100vh - 96px);
+    }
+    .panel {
+      background: rgba(19,29,53,0.8);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+    }
+    .panel-title {
+      font-size: 1.1rem; font-weight: 700; color: var(--teal);
+      margin-bottom: 16px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-subtitle { font-size: 0.85rem; font-weight: 600; color: var(--blue); margin: 14px 0 6px; }
+    p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 8px; }
+    /* Formula box */
+    .formula {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(0,212,170,0.2);
+      border-radius: 8px; padding: 10px 14px; margin: 10px 0;
+      font-family: 'Courier New', monospace; font-size: 0.82rem;
+      color: var(--gold); line-height: 1.6;
+    }
+    /* Buttons */
+    .btn {
+      background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3);
+      color: var(--teal); padding: 7px 14px; border-radius: 7px;
+      cursor: pointer; font-size: 0.78rem; font-weight: 600;
+      transition: all 0.2s; margin: 3px;
+    }
+    .btn:hover { background: rgba(0,212,170,0.2); }
+    .btn.active { background: var(--teal); color: #0a0e1a; }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0; }
+    /* Sliders */
+    .slider-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+    .slider-label { font-size: 0.78rem; color: var(--text-muted); min-width: 70px; }
+    .slider-val { font-size: 0.78rem; color: var(--gold); min-width: 40px; text-align: right; }
+    input[type=range] {
+      flex: 1; -webkit-appearance: none; height: 4px;
+      background: rgba(0,212,170,0.2); border-radius: 2px; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      background: var(--teal); cursor: pointer;
+    }
+    /* Metrics */
+    .metric { display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 6px;
+      font-size: 0.78rem; margin: 4px; }
+    .metric-label { color: var(--text-muted); }
+    .metric-val { color: var(--gold); font-weight: 700; }
+    /* SVG containers */
+    .svg-wrap { width: 100%; }
+    svg text { font-family: 'Inter', system-ui, sans-serif; }
+    /* Step description */
+    .step-desc { margin-top: 10px; padding: 8px 12px;
+      background: rgba(0,0,0,0.3); border-radius: 6px;
+      font-size: 0.78rem; color: var(--text); min-height: 36px; }
+    /* Diagnosis text */
+    .diagnosis { font-size: 0.9rem; font-weight: 700; margin: 8px 0; }
+    /* Table */
+    .rec-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 8px; }
+    .rec-table th { background: rgba(0,0,0,0.4); padding: 6px 8px;
+      color: var(--teal); border: 1px solid var(--border); text-align: center; }
+    .rec-table td { padding: 6px 8px; border: 1px solid var(--border);
+      text-align: center; }
+    .rec-table td.known { color: var(--gold); font-weight: 700; }
+    .rec-table td.predicted { color: var(--text-muted); font-style: italic; }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: rgba(0,212,170,0.3); border-radius: 3px; }
+    /* Bullet list */
+    ul.info-list { list-style: none; padding: 0; }
+    ul.info-list li { font-size: 0.82rem; color: var(--text-muted); padding: 3px 0;
+      padding-left: 16px; position: relative; }
+    ul.info-list li::before { content: '→'; position: absolute; left: 0; color: var(--teal); }
+    /* Anomaly count */
+    .anomaly-count { font-size: 0.8rem; margin-top: 6px; color: var(--text-muted); }
+    .anomaly-count span { color: #f87171; font-weight: 700; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+function seededRand(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return ((s >>> 0) / 0xffffffff);
+  };
+}
+
+function linScale(v, d0, d1, r0, r1) {
+  return r0 + (v - d0) / (d1 - d0) * (r1 - r0);
+}
+
+function sigmoid(z) {
+  return 1 / (1 + Math.exp(-z));
+}
+
+function randn(rand) {
+  const u1 = rand();
+  const u2 = rand();
+  return Math.sqrt(-2 * Math.log(u1 + 1e-10)) * Math.cos(2 * Math.PI * u2);
+}
+
+// ── SVG Helpers ────────────────────────────────────────────────────────────
+function GridLines({ W, H, mx, my, nx = 5, ny = 5 }) {
+  const lines = [];
+  for (let i = 0; i <= nx; i++) {
+    const x = mx + (i / nx) * (W - 2 * mx);
+    lines.push(<line key={`v${i}`} x1={x} y1={my} x2={x} y2={H - my} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />);
+  }
+  for (let i = 0; i <= ny; i++) {
+    const y = my + (i / ny) * (H - 2 * my);
+    lines.push(<line key={`h${i}`} x1={mx} y1={y} x2={W - mx} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />);
+  }
+  return <g>{lines}</g>;
+}
+
+function Axes({ W, H, mx, my, xlabel, ylabel }) {
+  return (
+    <g>
+      <line x1={mx} y1={H - my} x2={W - mx} y2={H - my} stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+      <line x1={mx} y1={my} x2={mx} y2={H - my} stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+      {xlabel && <text x={W - mx} y={H - my + 18} fill="rgba(255,255,255,0.4)" fontSize="10" textAnchor="end">{xlabel}</text>}
+      {ylabel && <text x={mx - 8} y={my} fill="rgba(255,255,255,0.4)" fontSize="10" textAnchor="end" transform={`rotate(-90,${mx-8},${my})`}>{ylabel}</text>}
+    </g>
+  );
+}
+
+// ── Chapter 1: Introduction to ML ─────────────────────────────────────────
+function Ch1() {
+  const [mode, setMode] = useState('supervised');
+  const W = 380, H = 280, mx = 40, my = 25;
+  const rand = seededRand(42);
+  const points = [];
+  for (let i = 0; i < 20; i++) {
+    points.push({ x: 0.2 + rand() * 0.3, y: 0.55 + rand() * 0.35, cls: 0 });
+  }
+  for (let i = 0; i < 20; i++) {
+    points.push({ x: 0.5 + rand() * 0.35, y: 0.1 + rand() * 0.35, cls: 1 });
+  }
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">Introduction to Machine Learning</div>
+        <div className="panel-subtitle">Arthur Samuel (1959)</div>
+        <p>Machine learning is the field of study that gives computers the ability to learn without being explicitly programmed.</p>
+        <div className="panel-subtitle">Formal Definition (Tom Mitchell)</div>
+        <div className="formula">A program learns from experience E<br/>with respect to task T and measure P,<br/>if performance on T (measured by P)<br/>improves with E.</div>
+        <div className="panel-subtitle">Supervised Learning</div>
+        <p>Training data has labeled examples (x, y). The algorithm learns a mapping f: X → Y. Examples: regression, classification.</p>
+        <div className="panel-subtitle">Unsupervised Learning</div>
+        <p>Data has no labels. Algorithm finds hidden structure — clusters, density estimates, dimensionality reduction.</p>
+        <ul className="info-list">
+          <li>Clustering: K-Means, DBSCAN</li>
+          <li>Density: Gaussian Mixture Models</li>
+          <li>Dimensionality: PCA, t-SNE</li>
+        </ul>
+      </div>
+      <div className="panel">
+        <div className="panel-title">Supervised vs Unsupervised</div>
+        <div className="btn-group">
+          <button className={`btn ${mode === 'supervised' ? 'active' : ''}`} onClick={() => setMode('supervised')}>Supervised</button>
+          <button className={`btn ${mode === 'unsupervised' ? 'active' : ''}`} onClick={() => setMode('unsupervised')}>Unsupervised</button>
+        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+          <GridLines W={W} H={H} mx={mx} my={my} />
+          <Axes W={W} H={H} mx={mx} my={my} xlabel="Feature x₁" ylabel="Feature x₂" />
+          {points.map((p, i) => {
+            const cx = linScale(p.x, 0, 1, mx, W - mx);
+            const cy = linScale(1 - p.y, 0, 1, my, H - my);
+            const color = mode === 'supervised'
+              ? (p.cls === 0 ? '#00d4aa' : '#f59e0b')
+              : '#64748b';
+            return <circle key={i} cx={cx} cy={cy} r="6" fill={color} fillOpacity="0.85"
+              stroke={mode === 'supervised' ? (p.cls === 0 ? '#00ffcc' : '#fbbf24') : '#94a3b8'}
+              strokeWidth="1.5" />;
+          })}
+          {mode === 'supervised' && (
+            <g>
+              <circle cx={W - 70} cy={my + 14} r="5" fill="#00d4aa" />
+              <text x={W - 60} y={my + 18} fill="#00d4aa" fontSize="10">Class A</text>
+              <circle cx={W - 70} cy={my + 30} r="5" fill="#f59e0b" />
+              <text x={W - 60} y={my + 34} fill="#f59e0b" fontSize="10">Class B</text>
+            </g>
+          )}
+          {mode === 'unsupervised' && (
+            <text x={W / 2} y={H - 5} fill="#94a3b8" fontSize="10" textAnchor="middle">No labels — discover structure</text>
+          )}
+        </svg>
+        <p style={{marginTop: 8, fontSize:'0.78rem'}}>
+          {mode === 'supervised' ? '40 data points colored by class label. Two distinct clusters are visible.' : '40 unlabeled points — unsupervised learning discovers the cluster structure automatically.'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter 2: Linear Regression ──────────────────────────────────────────
+function Ch2() {
+  const [theta0, setTheta0] = useState(1.0);
+  const [theta1, setTheta1] = useState(1.5);
+  const W = 380, H = 280, mx = 40, my = 25;
+  const rand = seededRand(77);
+  const data = [];
+  for (let i = 0; i < 25; i++) {
+    const x = rand() * 8;
+    const y = 1.2 + 1.8 * x + randn(rand) * 1.8;
+    data.push({ x, y });
+  }
+  const xMin = 0, xMax = 8, yMin = -3, yMax = 18;
+  const toSVG = (x, y) => ({
+    cx: linScale(x, xMin, xMax, mx, W - mx),
+    cy: linScale(y, yMin, yMax, H - my, my)
+  });
+  let J = 0;
+  data.forEach(d => { const err = (theta0 + theta1 * d.x) - d.y; J += err * err; });
+  J = J / (2 * data.length);
+  const lineX0 = xMin, lineY0 = theta0 + theta1 * lineX0;
+  const lineX1 = xMax, lineY1 = theta0 + theta1 * lineX1;
+  const p0 = toSVG(lineX0, lineY0), p1 = toSVG(lineX1, lineY1);
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">Linear Regression</div>
+        <div className="panel-subtitle">Hypothesis</div>
+        <div className="formula">h_θ(x) = θ₀ + θ₁x</div>
+        <div className="panel-subtitle">Cost Function</div>
+        <div className="formula">J(θ) = 1/(2m) Σᵢ(h_θ(xⁱ) − yⁱ)²</div>
+        <div className="panel-subtitle">Gradient Descent</div>
+        <div className="formula">θⱼ := θⱼ − α · ∂J/∂θⱼ<br/>
+θ₀ := θ₀ − α/m · Σ(h−y)<br/>
+θ₁ := θ₁ − α/m · Σ(h−y)·x</div>
+        <div className="panel-subtitle">Normal Equation</div>
+        <div className="formula">θ = (XᵀX)⁻¹ Xᵀy</div>
+        <p>The normal equation gives an analytical solution in O(n³). Gradient descent scales better for large n.</p>
+      </div>
+      <div className="panel">
+        <div className="panel-title">Interactive Regression</div>
+        <div className="slider-row">
+          <span className="slider-label">θ₀ (intercept)</span>
+          <input type="range" min="-5" max="8" step="0.1" value={theta0}
+            onChange={e => setTheta0(parseFloat(e.target.value))} />
+          <span className="slider-val">{theta0.toFixed(1)}</span>
+        </div>
+        <div className="slider-row">
+          <span className="slider-label">θ₁ (slope)</span>
+          <input type="range" min="-2" max="4" step="0.05" value={theta1}
+            onChange={e => setTheta1(parseFloat(e.target.value))} />
+          <span className="slider-val">{theta1.toFixed(2)}</span>
+        </div>
+        <div className="metric"><span className="metric-label">J(θ) =</span><span className="metric-val">{J.toFixed(3)}</span></div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+          <GridLines W={W} H={H} mx={mx} my={my} />
+          <Axes W={W} H={H} mx={mx} my={my} xlabel="x" ylabel="y" />
+          {/* Residuals */}
+          {data.map((d, i) => {
+            const { cx, cy } = toSVG(d.x, d.y);
+            const predY = theta0 + theta1 * d.x;
+            const { cy: predCy } = { cy: linScale(predY, yMin, yMax, H - my, my) };
+            return <line key={i} x1={cx} y1={cy} x2={cx} y2={predCy}
+              stroke="rgba(245,158,11,0.35)" strokeWidth="1" strokeDasharray="3,2" />;
+          })}
+          {/* Regression line */}
+          <line x1={p0.cx} y1={p0.cy} x2={p1.cx} y2={p1.cy}
+            stroke="#0ea5e9" strokeWidth="2.5" strokeLinecap="round" />
+          {/* Data points */}
+          {data.map((d, i) => {
+            const { cx, cy } = toSVG(d.x, d.y);
+            return <circle key={i} cx={cx} cy={cy} r="4.5" fill="#00d4aa" fillOpacity="0.8"
+              stroke="#00ffcc" strokeWidth="1" />;
+          })}
+        </svg>
+        <p style={{fontSize:'0.75rem', marginTop:4}}>Drag sliders to adjust θ₀ and θ₁. Dashed lines show residuals. Minimize J(θ).</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter 3: Logistic Regression & Regularization ───────────────────────
+function Ch3() {
+  const [view, setView] = useState('sigmoid');
+  const [zVal, setZVal] = useState(0);
+  const [lambda, setLambda] = useState(1);
+  const W = 380, H = 270, mx = 45, my = 25;
+  // Sigmoid view
+  const sigPoints = [];
+  for (let z = -6; z <= 6; z += 0.15) {
+    sigPoints.push({ z, s: sigmoid(z) });
+  }
+  const sigPath = sigPoints.map((p, i) => {
+    const x = linScale(p.z, -6, 6, mx, W - mx);
+    const y = linScale(p.s, 0, 1, H - my, my);
+    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+  }).join(' ');
+  const dotX = linScale(zVal, -6, 6, mx, W - mx);
+  const dotY = linScale(sigmoid(zVal), 0, 1, H - my, my);
+  // Decision boundary view
+  const rand2 = seededRand(55);
+  const pts2 = [];
+  for (let i = 0; i < 20; i++) pts2.push({ x: 0.1 + rand2() * 0.35, y: 0.1 + rand2() * 0.8, cls: 0 });
+  for (let i = 0; i < 20; i++) pts2.push({ x: 0.55 + rand2() * 0.35, y: 0.1 + rand2() * 0.8, cls: 1 });
+  const boundX = 0.45 + (lambda - 1) * 0.02;
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">Logistic Regression & Regularization</div>
+        <div className="panel-subtitle">Sigmoid Function</div>
+        <div className="formula">σ(z) = 1 / (1 + e⁻ᶻ)</div>
+        <div className="panel-subtitle">Hypothesis</div>
+        <div className="formula">h_θ(x) = σ(θᵀx)<br/>P(y=1 | x; θ)</div>
+        <div className="panel-subtitle">Decision Boundary</div>
+        <p>Predict y=1 if h_θ(x) ≥ 0.5, i.e. when θᵀx ≥ 0. The boundary is linear in θᵀx space.</p>
+        <div className="panel-subtitle">Regularized Cost</div>
+        <div className="formula">J(θ) = −1/m Σ[y log h + (1−y) log(1−h)]<br/>+ λ/(2m) Σθⱼ²</div>
+        <p>λ controls the regularization strength. Larger λ → simpler model (higher bias, lower variance).</p>
+      </div>
+      <div className="panel">
+        <div className="panel-title">Visualization</div>
+        <div className="btn-group">
+          <button className={`btn ${view === 'sigmoid' ? 'active' : ''}`} onClick={() => setView('sigmoid')}>Sigmoid Curve</button>
+          <button className={`btn ${view === 'boundary' ? 'active' : ''}`} onClick={() => setView('boundary')}>Decision Boundary</button>
+        </div>
+        {view === 'sigmoid' && (
+          <>
+            <div className="slider-row">
+              <span className="slider-label">z value</span>
+              <input type="range" min="-6" max="6" step="0.1" value={zVal}
+                onChange={e => setZVal(parseFloat(e.target.value))} />
+              <span className="slider-val">{zVal.toFixed(1)}</span>
+            </div>
+            <div className="metric"><span className="metric-label">σ(z) =</span>
+              <span className="metric-val">{sigmoid(zVal).toFixed(4)}</span></div>
+            <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+              <GridLines W={W} H={H} mx={mx} my={my} />
+              <Axes W={W} H={H} mx={mx} my={my} xlabel="z" ylabel="σ(z)" />
+              {/* 0.5 line */}
+              <line x1={mx} y1={(H - my + my) / 2} x2={W - mx} y2={(H - my + my) / 2}
+                stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="4,3" />
+              <path d={sigPath} fill="none" stroke="#0ea5e9" strokeWidth="2.5" />
+              <line x1={dotX} y1={H - my} x2={dotX} y2={dotY} stroke="rgba(245,158,11,0.4)" strokeWidth="1" strokeDasharray="3,2" />
+              <line x1={mx} y1={dotY} x2={dotX} y2={dotY} stroke="rgba(245,158,11,0.4)" strokeWidth="1" strokeDasharray="3,2" />
+              <circle cx={dotX} cy={dotY} r="7" fill="#f59e0b" stroke="#fff" strokeWidth="1.5" />
+              <text x={mx + 4} y={my + 10} fill="#94a3b8" fontSize="9">1.0</text>
+              <text x={mx + 4} y={(H + my) / 2 + 4} fill="#94a3b8" fontSize="9">0.5</text>
+              <text x={mx + 4} y={H - my - 2} fill="#94a3b8" fontSize="9">0.0</text>
+            </svg>
+          </>
+        )}
+        {view === 'boundary' && (
+          <>
+            <div className="slider-row">
+              <span className="slider-label">λ (regularize)</span>
+              <input type="range" min="0" max="10" step="0.5" value={lambda}
+                onChange={e => setLambda(parseFloat(e.target.value))} />
+              <span className="slider-val">{lambda.toFixed(1)}</span>
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+              <GridLines W={W} H={H} mx={mx} my={my} />
+              <Axes W={W} H={H} mx={mx} my={my} xlabel="x₁" ylabel="x₂" />
+              {pts2.map((p, i) => {
+                const cx = linScale(p.x, 0, 1, mx, W - mx);
+                const cy = linScale(1 - p.y, 0, 1, my, H - my);
+                return <circle key={i} cx={cx} cy={cy} r="5"
+                  fill={p.cls === 0 ? '#00d4aa' : '#f59e0b'} fillOpacity="0.8"
+                  stroke={p.cls === 0 ? '#00ffcc' : '#fbbf24'} strokeWidth="1" />;
+              })}
+              {/* Decision boundary line */}
+              {(() => {
+                const bx = linScale(boundX, 0, 1, mx, W - mx);
+                return <line x1={bx} y1={my} x2={bx} y2={H - my}
+                  stroke="#f87171" strokeWidth="2.5" strokeDasharray="6,3" />;
+              })()}
+              <text x={linScale(boundX, 0, 1, mx, W - mx) + 4} y={my + 14}
+                fill="#f87171" fontSize="9">Decision Boundary</text>
+            </svg>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter 4: Neural Networks — Representation ────────────────────────────
+function Ch4() {
+  const [arch, setArch] = useState('3-4-2');
+  const [pulse, setPulse] = useState(0);
+  const archs = {
+    '3-4-2': [3, 4, 2],
+    '3-4-3-2': [3, 4, 3, 2],
+    '2-5-5-3-1': [2, 5, 5, 3, 1]
+  };
+  const layers = archs[arch];
+  useEffect(() => {
+    const id = setInterval(() => setPulse(p => p + 1), 50);
+    return () => clearInterval(id);
+  }, []);
+  const W = 380, H = 280;
+  const layerX = layers.map((_, li) => linScale(li, 0, layers.length - 1, 60, W - 40));
+  const getNeuronY = (li, ni) => {
+    const n = layers[li];
+    return linScale(ni, 0, n - 1, H / 2 - (n - 1) * 22, H / 2 + (n - 1) * 22);
+  };
+  // Which layer is active: cycle through 0..layers.length-1
+  const activeLayer = Math.floor(pulse / 8) % layers.length;
+  const COLORS = { active: '#00d4aa', inactive: '#1e3a5f', edge: 'rgba(14,165,233,0.15)', activeEdge: 'rgba(0,212,170,0.5)' };
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">Neural Networks — Representation</div>
+        <div className="panel-subtitle">Biological Motivation</div>
+        <p>Artificial neurons model biological neurons: inputs are weighted, summed, then passed through an activation function.</p>
+        <div className="panel-subtitle">Network Architecture</div>
+        <div className="formula">Layer 1: Input layer (features x)<br/>Layers 2..L-1: Hidden layers<br/>Layer L: Output layer</div>
+        <div className="panel-subtitle">Forward Propagation</div>
+        <div className="formula">a⁽¹⁾ = x<br/>z⁽ˡ⁾ = Θ⁽ˡ⁻¹⁾ a⁽ˡ⁻¹⁾<br/>a⁽ˡ⁾ = g(z⁽ˡ⁾)</div>
+        <div className="panel-subtitle">Activation Function</div>
+        <div className="formula">g(z) = 1 / (1 + e⁻ᶻ)  [sigmoid]<br/>g(z) = max(0,z)  [ReLU]</div>
+        <p>Each layer learns increasingly abstract representations of the input data.</p>
+      </div>
+      <div className="panel">
+        <div className="panel-title">Network Visualization (animated forward pass)</div>
+        <div className="btn-group">
+          {Object.keys(archs).map(a => (
+            <button key={a} className={`btn ${arch === a ? 'active' : ''}`}
+              onClick={() => setArch(a)}>{a}</button>
+          ))}
+        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+          {/* Edges */}
+          {layers.map((n, li) => li < layers.length - 1 && Array.from({length: n}, (_, ni) =>
+            Array.from({length: layers[li+1]}, (_, nj) => (
+              <line key={`e${li}-${ni}-${nj}`}
+                x1={layerX[li]} y1={getNeuronY(li, ni)}
+                x2={layerX[li+1]} y2={getNeuronY(li+1, nj)}
+                stroke={li === activeLayer ? COLORS.activeEdge : COLORS.edge}
+                strokeWidth={li === activeLayer ? 1.2 : 0.7} />
+            ))
+          )}
+          {/* Neurons */}
+          {layers.map((n, li) =>
+            Array.from({length: n}, (_, ni) => {
+              const cy = getNeuronY(li, ni);
+              const isActive = li === activeLayer;
+              const label = li === 0 ? `x${ni+1}` : li === layers.length - 1 ? `o${ni+1}` : `a${ni+1}`;
+              return (
+                <g key={`n${li}-${ni}`}>
+                  {isActive && <circle cx={layerX[li]} cy={cy} r="14"
+                    fill="none" stroke="#00d4aa" strokeWidth="2" opacity="0.6" />}
+                  <circle cx={layerX[li]} cy={cy} r="10"
+                    fill={isActive ? COLORS.active : COLORS.inactive}
+                    stroke={isActive ? '#00ffcc' : '#2d5a8a'}
+                    strokeWidth="1.5" />
+                  <text x={layerX[li]} y={cy + 4} textAnchor="middle"
+                    fill={isActive ? '#0a0e1a' : '#94a3b8'} fontSize="7" fontWeight="700">{label}</text>
+                </g>
+              );
+            })
+          )}
+          {/* Layer labels */}
+          {layers.map((n, li) => (
+            <text key={`lbl${li}`} x={layerX[li]} y={H - 6} textAnchor="middle"
+              fill="#94a3b8" fontSize="9">
+              {li === 0 ? 'Input' : li === layers.length - 1 ? 'Output' : `Hidden ${li}`}
+            </text>
+          ))}
+        </svg>
+        <div className="step-desc">Pulse propagating through layer {activeLayer + 1} of {layers.length}. Architecture: {arch}.</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter 5: Neural Networks — Learning (Backprop) ──────────────────────
+function Ch5() {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { label: 'Forward: Input → Hidden 1', dir: 'forward', layer: 0 },
+    { label: 'Forward: Hidden 1 → Hidden 2', dir: 'forward', layer: 1 },
+    { label: 'Forward: Hidden 2 → Output', dir: 'forward', layer: 2 },
+    { label: 'Forward: Compute Loss L(ŷ, y)', dir: 'forward', layer: 3 },
+    { label: 'Backward: Output δ = (ŷ−y)·g′(z)', dir: 'backward', layer: 3 },
+    { label: 'Backward: Propagate δ to Hidden 2', dir: 'backward', layer: 2 },
+    { label: 'Backward: Propagate δ to Hidden 1', dir: 'backward', layer: 1 },
+    { label: 'Backward: Update Weights Δ = αδa', dir: 'backward', layer: 0 },
+  ];
+  const layers = [3, 4, 3, 1];
+  const W = 380, H = 280;
+  const layerX = layers.map((_, li) => linScale(li, 0, layers.length - 1, 55, W - 30));
+  const getNeuronY = (li, ni) => {
+    const n = layers[li];
+    return linScale(ni, 0, n - 1, H / 2 - (n - 1) * 24, H / 2 + (n - 1) * 24);
+  };
+  const cur = steps[step];
+  const fwdColor = '#0ea5e9';
+  const bwdColor = '#f87171';
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">Neural Networks — Backpropagation</div>
+        <div className="panel-subtitle">The 5 Steps</div>
+        <ul className="info-list">
+          <li>Forward pass: compute all activations</li>
+          <li>Compute loss L(ŷ, y)</li>
+          <li>Output δ⁽ᴸ⁾ = aᴸ − y</li>
+          <li>Back-propagate: δ⁽ˡ⁾ = (Θ⁽ˡ⁾ᵀδ⁽ˡ⁺¹⁾) ⊙ g′(z⁽ˡ⁾)</li>
+          <li>Update: Θ⁽ˡ⁾ := Θ⁽ˡ⁾ − α·δ⁽ˡ⁺¹⁾(aˡ)ᵀ</li>
+        </ul>
+        <div className="panel-subtitle">Gradient Accumulation</div>
+        <div className="formula">Δ⁽ˡ⁾ := Δ⁽ˡ⁾ + δ⁽ˡ⁺¹⁾(aˡ)ᵀ<br/>∂J/∂Θ⁽ˡ⁾ = 1/m Δ⁽ˡ⁾ + λ/m Θ⁽ˡ⁾</div>
+        <div className="panel-subtitle">Chain Rule</div>
+        <div className="formula">∂L/∂w = ∂L/∂a · ∂a/∂z · ∂z/∂w</div>
+        <p>Backprop efficiently computes all partial derivatives using the chain rule, reusing intermediate computations.</p>
+      </div>
+      <div className="panel">
+        <div className="panel-title">Backpropagation Step-Through</div>
+        <div className="btn-group">
+          <button className="btn" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}>◀ Prev</button>
+          <button className="btn" onClick={() => setStep(s => Math.min(steps.length - 1, s + 1))} disabled={step === steps.length - 1}>Next ▶</button>
+          <span className="metric"><span className="metric-label">Step</span><span className="metric-val">{step + 1}/{steps.length}</span></span>
+        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+          {layers.map((n, li) => li < layers.length - 1 && Array.from({length: n}, (_, ni) =>
+            Array.from({length: layers[li+1]}, (_, nj) => {
+              const isActive = (cur.dir === 'forward' && li === cur.layer) ||
+                               (cur.dir === 'backward' && li === cur.layer - 1);
+              return (
+                <line key={`e${li}-${ni}-${nj}`}
+                  x1={layerX[li]} y1={getNeuronY(li, ni)}
+                  x2={layerX[li+1]} y2={getNeuronY(li+1, nj)}
+                  stroke={isActive ? (cur.dir === 'forward' ? 'rgba(14,165,233,0.7)' : 'rgba(248,113,113,0.7)') : 'rgba(255,255,255,0.05)'}
+                  strokeWidth={isActive ? 1.5 : 0.7} />
+              );
+            })
+          )}
+          {layers.map((n, li) =>
+            Array.from({length: n}, (_, ni) => {
+              const cy = getNeuronY(li, ni);
+              const isForwardActive = cur.dir === 'forward' && li <= cur.layer;
+              const isBackwardActive = cur.dir === 'backward' && li >= cur.layer;
+              const color = isForwardActive ? fwdColor : isBackwardActive ? bwdColor : '#1e3a5f';
+              const strokeColor = isForwardActive ? '#7dd3fc' : isBackwardActive ? '#fca5a5' : '#2d5a8a';
+              return (
+                <g key={`n${li}-${ni}`}>
+                  <circle cx={layerX[li]} cy={cy} r="10"
+                    fill={color} stroke={strokeColor} strokeWidth="1.5" />
+                </g>
+              );
+            })
+          )}
+          {layers.map((n, li) => (
+            <text key={`lbl${li}`} x={layerX[li]} y={H - 6} textAnchor="middle"
+              fill="#94a3b8" fontSize="9">
+              {li === 0 ? 'Input' : li === layers.length - 1 ? 'Output' : `H${li}`}
+            </text>
+          ))}
+          {/* Direction arrow */}
+          <text x={W / 2} y={my + 16 || 18} textAnchor="middle" fill={cur.dir === 'forward' ? fwdColor : bwdColor}
+            fontSize="11" fontWeight="700">
+            {cur.dir === 'forward' ? '→ FORWARD PASS →' : '← BACKWARD PASS ←'}
+          </text>
+        </svg>
+        <div className="step-desc">{cur.label}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter 6: Evaluating & Improving ML Models ────────────────────────────
+function Ch6() {
+  const [degree, setDegree] = useState(3);
+  const W = 380, H = 260, mx = 45, my = 20;
+  const nPts = 20;
+  const xVals = Array.from({length: nPts}, (_, i) => (i + 1) / nPts);
+  // Training error: decreases as degree increases
+  const trainErr = xVals.map(x => {
+    const base = Math.max(0.05, 2.5 - 0.35 * degree);
+    return base * (1 - x * 0.3) + 0.05;
+  });
+  // CV error: U-shaped with minimum around degree 3-4
+  const cvErr = xVals.map(x => {
+    if (degree <= 2) {
+      return 2.2 - x * 0.2;
+    } else if (degree <= 4) {
+      return 0.8 + x * 0.1;
+    } else {
+      return 0.5 + (degree - 4) * 0.5 + x * (degree - 3) * 0.3;
+    }
+  });
+  const maxErr = Math.max(...trainErr, ...cvErr, 0.1);
+  const toX = (i) => linScale(xVals[i], 0, 1, mx, W - mx);
+  const toY = (v) => linScale(v, 0, Math.max(maxErr, 3), H - my, my);
+  const trainPath = trainErr.map((v, i) => `${i === 0 ? 'M' : 'L'}${toX(i)},${toY(v)}`).join(' ');
+  const cvPath = cvErr.map((v, i) => `${i === 0 ? 'M' : 'L'}${toX(i)},${toY(v)}`).join(' ');
+  let diagnosis = 'Good Fit';
+  let diagColor = '#00d4aa';
+  const finalTrain = trainErr[nPts - 1];
+  const finalCV = cvErr[nPts - 1];
+  if (degree <= 2) { diagnosis = 'HIGH BIAS'; diagColor = '#f59e0b'; }
+  else if (degree >= 5 && finalCV - finalTrain > 0.8) { diagnosis = 'HIGH VARIANCE'; diagColor = '#f87171'; }
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">Evaluating & Improving ML Models</div>
+        <div className="panel-subtitle">Bias-Variance Tradeoff</div>
+        <div className="formula">Error = Bias² + Variance + Noise</div>
+        <div className="panel-subtitle">High Bias (Underfitting)</div>
+        <ul className="info-list">
+          <li>Training error and CV error both high</li>
+          <li>Add more features or polynomial terms</li>
+          <li>Decrease regularization λ</li>
+          <li>Use more complex model</li>
+        </ul>
+        <div className="panel-subtitle">High Variance (Overfitting)</div>
+        <ul className="info-list">
+          <li>Low training error, high CV error</li>
+          <li>Get more training data</li>
+          <li>Reduce number of features</li>
+          <li>Increase regularization λ</li>
+        </ul>
+        <div className="panel-subtitle">Model Selection</div>
+        <p>Use train/validation/test split. Choose model complexity using CV error, report final performance on test set only.</p>
+      </div>
+      <div className="panel">
+        <div className="panel-title">Learning Curves</div>
+        <div className="slider-row">
+          <span className="slider-label">Polynomial degree</span>
+          <input type="range" min="1" max="8" step="1" value={degree}
+            onChange={e => setDegree(parseInt(e.target.value))} />
+          <span className="slider-val">{degree}</span>
+        </div>
+        <div className="diagnosis" style={{color: diagColor}}>Diagnosis: {diagnosis}</div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+          <GridLines W={W} H={H} mx={mx} my={my} />
+          <Axes W={W} H={H} mx={mx} my={my} xlabel="Training size" ylabel="Error" />
+          <path d={trainPath} fill="none" stroke="#0ea5e9" strokeWidth="2.5" />
+          <path d={cvPath} fill="none" stroke="#f87171" strokeWidth="2.5" />
+          {/* Legend */}
+          <line x1={W - 110} y1={my + 12} x2={W - 90} y2={my + 12} stroke="#0ea5e9" strokeWidth="2" />
+          <text x={W - 86} y={my + 16} fill="#0ea5e9" fontSize="9">Train Error</text>
+          <line x1={W - 110} y1={my + 26} x2={W - 90} y2={my + 26} stroke="#f87171" strokeWidth="2" />
+          <text x={W - 86} y={my + 30} fill="#f87171" fontSize="9">CV Error</text>
+        </svg>
+        <p style={{fontSize:'0.75rem', marginTop:4}}>
+          {degree <= 2 ? 'Low degree → both curves plateau high = high bias.' :
+           degree >= 5 ? 'High degree → large gap between train/CV = high variance.' :
+           'Moderate degree → curves converge at low error = good fit.'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter 7: Support Vector Machines ────────────────────────────────────
+function Ch7() {
+  const [kernel, setKernel] = useState('linear');
+  const [C, setC] = useState(1);
+  const W = 380, H = 270, mx = 35, my = 25;
+  const rand = seededRand(123);
+  const pts = [];
+  for (let i = 0; i < 18; i++) pts.push({ x: 0.08 + rand() * 0.32, y: 0.1 + rand() * 0.8, cls: 0 });
+  for (let i = 0; i < 18; i++) pts.push({ x: 0.6 + rand() * 0.32, y: 0.1 + rand() * 0.8, cls: 1 });
+  const margin = 0.12 + 0.08 / C;
+  const boundX = 0.5;
+  const svIndices = [2, 5, 20, 23];
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">Support Vector Machines</div>
+        <div className="panel-subtitle">SVM Objective</div>
+        <div className="formula">min ½||w||² + C·Σξᵢ<br/>s.t. yᵢ(wᵀxᵢ+b) ≥ 1 − ξᵢ</div>
+        <div className="panel-subtitle">Kernel Trick</div>
+        <p>Map data to higher-dimensional space where it becomes linearly separable. Compute via kernel function K(x,z).</p>
+        <div className="panel-subtitle">RBF Kernel</div>
+        <div className="formula">K(x,z) = exp(−γ||x−z||²)</div>
+        <div className="panel-subtitle">Support Vectors</div>
+        <p>Only the data points closest to the decision boundary (support vectors) define the hyperplane. All others could be removed without changing the solution.</p>
+        <ul className="info-list">
+          <li>Large C → narrow margin, less regularization</li>
+          <li>Small C → wide margin, more regularization</li>
+          <li>RBF handles non-linear boundaries</li>
+        </ul>
+      </div>
+      <div className="panel">
+        <div className="panel-title">SVM Visualization</div>
+        <div className="btn-group">
+          <button className={`btn ${kernel === 'linear' ? 'active' : ''}`} onClick={() => setKernel('linear')}>Linear Kernel</button>
+          <button className={`btn ${kernel === 'rbf' ? 'active' : ''}`} onClick={() => setKernel('rbf')}>RBF Kernel</button>
+        </div>
+        <div className="slider-row">
+          <span className="slider-label">C (cost)</span>
+          <input type="range" min="0.1" max="10" step="0.1" value={C}
+            onChange={e => setC(parseFloat(e.target.value))} />
+          <span className="slider-val">{C.toFixed(1)}</span>
+        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+          <GridLines W={W} H={H} mx={mx} my={my} />
+          <Axes W={W} H={H} mx={mx} my={my} xlabel="x₁" ylabel="x₂" />
+          {kernel === 'linear' && (() => {
+            const bx = linScale(boundX, 0, 1, mx, W - mx);
+            const m1x = linScale(boundX - margin, 0, 1, mx, W - mx);
+            const m2x = linScale(boundX + margin, 0, 1, mx, W - mx);
+            return (
+              <g>
+                <rect x={m1x} y={my} width={m2x - m1x} height={H - my - my}
+                  fill="rgba(248,113,113,0.07)" />
+                <line x1={bx} y1={my} x2={bx} y2={H - my} stroke="#f87171" strokeWidth="2.5" />
+                <line x1={m1x} y1={my} x2={m1x} y2={H - my} stroke="#f87171" strokeWidth="1" strokeDasharray="5,3" />
+                <line x1={m2x} y1={my} x2={m2x} y2={H - my} stroke="#f87171" strokeWidth="1" strokeDasharray="5,3" />
+              </g>
+            );
+          })()}
+          {kernel === 'rbf' && (() => {
+            const cx = linScale(0.5, 0, 1, mx, W - mx);
+            const cy = (H) / 2;
+            const r = linScale(0.22 + 0.05 / C, 0, 1, 0, W - 2 * mx);
+            return <ellipse cx={cx} cy={cy} rx={r} ry={r * 1.1} fill="none"
+              stroke="#f87171" strokeWidth="2.5" strokeDasharray="6,3" />;
+          })()}
+          {pts.map((p, i) => {
+            const cx = linScale(p.x, 0, 1, mx, W - mx);
+            const cy = linScale(1 - p.y, 0, 1, my, H - my);
+            const isSV = svIndices.includes(i);
+            return (
+              <g key={i}>
+                {isSV && <circle cx={cx} cy={cy} r="10" fill="none"
+                  stroke={p.cls === 0 ? '#00d4aa' : '#f59e0b'} strokeWidth="2" />}
+                <circle cx={cx} cy={cy} r="5.5" fill={p.cls === 0 ? '#00d4aa' : '#f59e0b'}
+                  fillOpacity="0.85" stroke={p.cls === 0 ? '#00ffcc' : '#fbbf24'} strokeWidth="1" />
+              </g>
+            );
+          })}
+          <text x={W - mx - 5} y={my + 10} fill="#94a3b8" fontSize="8" textAnchor="end">Ringed = Support Vectors</text>
+        </svg>
+        <p style={{fontSize:'0.75rem', marginTop:4}}>Margin width: {(margin * 2).toFixed(3)}. {kernel === 'linear' ? 'Linear decision boundary with margin.' : 'RBF creates circular decision boundary.'}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter 8: K-Means & PCA ───────────────────────────────────────────────
+function Ch8() {
+  const [iter, setIter] = useState(0);
+  const W = 380, H = 270, mx = 35, my = 20;
+  const rand = seededRand(88);
+  // Generate 45 points in 3 clusters
+  const trueClusterCenters = [[0.2, 0.75], [0.7, 0.7], [0.45, 0.2]];
+  const points = [];
+  for (let c = 0; c < 3; c++) {
+    for (let i = 0; i < 15; i++) {
+      points.push({
+        x: trueClusterCenters[c][0] + randn(rand) * 0.1,
+        y: trueClusterCenters[c][1] + randn(rand) * 0.1,
+        trueC: c
+      });
+    }
+  }
+  // 5 K-means iterations with evolving centroids
+  const iterations = [
+    { centroids: [[0.15, 0.5], [0.8, 0.5], [0.5, 0.5]], desc: 'Init: Random centroids placed' },
+    { centroids: [[0.22, 0.72], [0.68, 0.68], [0.46, 0.22]], desc: 'Iter 1: Assign + update centroids' },
+    { centroids: [[0.20, 0.75], [0.70, 0.71], [0.45, 0.20]], desc: 'Iter 2: Clusters tightening' },
+    { centroids: [[0.20, 0.75], [0.70, 0.70], [0.45, 0.20]], desc: 'Iter 3: Nearly converged' },
+    { centroids: [[0.20, 0.75], [0.70, 0.70], [0.45, 0.20]], desc: 'Iter 4: Converged ✓' },
+  ];
+  const curIter = iterations[iter];
+  const clusterColors = ['#00d4aa', '#f59e0b', '#0ea5e9'];
+  // Assign points to nearest centroid
+  const assigned = points.map(p => {
+    let best = 0, bestDist = Infinity;
+    curIter.centroids.forEach((c, ci) => {
+      const d = (p.x - c[0]) ** 2 + (p.y - c[1]) ** 2;
+      if (d < bestDist) { bestDist = d; best = ci; }
+    });
+    return best;
+  });
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">K-Means & PCA</div>
+        <div className="panel-subtitle">K-Means Algorithm</div>
+        <ul className="info-list">
+          <li>Initialize K centroids randomly</li>
+          <li>Assignment: assign each xᵢ to nearest μₖ</li>
+          <li>Update: μₖ = mean of assigned points</li>
+          <li>Repeat until convergence</li>
+        </ul>
+        <div className="formula">c⁽ⁱ⁾ = argmin_k ||x⁽ⁱ⁾ − μₖ||²<br/>μₖ = 1/|Cₖ| Σ_{i∈Cₖ} x⁽ⁱ⁾</div>
+        <div className="panel-subtitle">PCA Algorithm</div>
+        <ul className="info-list">
+          <li>Normalize: mean=0, std=1</li>
+          <li>Compute covariance: Σ = 1/m XᵀX</li>
+          <li>SVD: [U,S,V] = svd(Σ)</li>
+          <li>Project: z = Uᵣedᵀ · x</li>
+        </ul>
+        <div className="formula">Retain variance = Σᵢ₌₁ᵏ Sᵢᵢ / Σᵢ₌₁ⁿ Sᵢᵢ</div>
+      </div>
+      <div className="panel">
+        <div className="panel-title">K-Means Iteration</div>
+        <div className="btn-group">
+          <button className="btn" onClick={() => setIter(i => Math.max(0, i - 1))} disabled={iter === 0}>◀ Prev</button>
+          <button className="btn" onClick={() => setIter(i => Math.min(4, i + 1))} disabled={iter === 4}>Next ▶</button>
+          <span className="metric"><span className="metric-label">Step</span><span className="metric-val">{iter + 1}/5</span></span>
+        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+          <GridLines W={W} H={H} mx={mx} my={my} />
+          <Axes W={W} H={H} mx={mx} my={my} />
+          {/* Lines to centroids */}
+          {points.map((p, i) => {
+            const c = curIter.centroids[assigned[i]];
+            const px = linScale(p.x, 0, 1, mx, W - mx);
+            const py = linScale(1 - p.y, 0, 1, my, H - my);
+            const cx = linScale(c[0], 0, 1, mx, W - mx);
+            const cy = linScale(1 - c[1], 0, 1, my, H - my);
+            return <line key={i} x1={px} y1={py} x2={cx} y2={cy}
+              stroke={clusterColors[assigned[i]]} strokeOpacity="0.2" strokeWidth="1" />;
+          })}
+          {/* Data points */}
+          {points.map((p, i) => {
+            const cx = linScale(p.x, 0, 1, mx, W - mx);
+            const cy = linScale(1 - p.y, 0, 1, my, H - my);
+            return <circle key={i} cx={cx} cy={cy} r="5"
+              fill={clusterColors[assigned[i]]} fillOpacity="0.8"
+              stroke={clusterColors[assigned[i]]} strokeWidth="1" />;
+          })}
+          {/* Centroids */}
+          {curIter.centroids.map((c, ci) => {
+            const cx = linScale(c[0], 0, 1, mx, W - mx);
+            const cy = linScale(1 - c[1], 0, 1, my, H - my);
+            return (
+              <g key={ci}>
+                <circle cx={cx} cy={cy} r="14" fill="none"
+                  stroke={clusterColors[ci]} strokeWidth="2.5" />
+                <circle cx={cx} cy={cy} r="8" fill={clusterColors[ci]} />
+                <text x={cx + 16} y={cy + 4} fill={clusterColors[ci]}
+                  fontSize="9" fontWeight="700">μ{ci+1}</text>
+              </g>
+            );
+          })}
+        </svg>
+        <div className="step-desc">{curIter.desc}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter 9: Anomaly Detection & Recommender Systems ────────────────────
+function Ch9() {
+  const [view, setView] = useState('anomaly');
+  const [epsilon, setEpsilon] = useState(0.03);
+  const W = 380, H = 270, mx = 35, my = 25;
+  const rand = seededRand(321);
+  const mu = [0.5, 0.5];
+  const sigma = [0.12, 0.09];
+  // Generate 44 points
+  const points = [];
+  for (let i = 0; i < 40; i++) {
+    points.push({ x: mu[0] + randn(rand) * sigma[0], y: mu[1] + randn(rand) * sigma[1] });
+  }
+  // 4 anomaly points far from center
+  points.push({ x: 0.85, y: 0.85 });
+  points.push({ x: 0.1, y: 0.15 });
+  points.push({ x: 0.9, y: 0.2 });
+  points.push({ x: 0.15, y: 0.82 });
+  // Gaussian probability
+  const gaussianP = (x, y) => {
+    const px = Math.exp(-0.5 * ((x - mu[0]) / sigma[0]) ** 2) / (sigma[0] * Math.sqrt(2 * Math.PI));
+    const py = Math.exp(-0.5 * ((y - mu[1]) / sigma[1]) ** 2) / (sigma[1] * Math.sqrt(2 * Math.PI));
+    return px * py;
+  };
+  const anomalies = points.filter(p => gaussianP(p.x, p.y) < epsilon * 0.1);
+  // Contour levels
+  const contours = [0.3, 0.5, 1.0, 2.0, 4.0].map(v => v * epsilon * 0.1);
+  // Recommender data
+  const movies = ['Inception', 'Titanic', 'Avatar', 'Interstellar', 'Joker'];
+  const users = ['Alice', 'Bob', 'Carol', 'Dave'];
+  const ratings = [
+    [5, null, 4, null, 2],
+    [null, 3, null, 5, null],
+    [4, 5, null, 3, null],
+    [null, null, 3, null, 4],
+  ];
+  const predicted = [
+    [null, 3.8, null, 4.2, null],
+    [4.1, null, 3.5, null, 2.9],
+    [null, null, 4.4, null, 3.1],
+    [3.7, 4.2, null, 4.5, null],
+  ];
+  return (
+    <div className="chapter-grid">
+      <div className="panel">
+        <div className="panel-title">Anomaly Detection & Recommenders</div>
+        <div className="panel-subtitle">Gaussian Model</div>
+        <div className="formula">p(x) = Πⱼ p(xⱼ; μⱼ, σⱼ²)<br/>Flag anomaly if p(x) &lt; ε</div>
+        <div className="panel-subtitle">Parameter Estimation</div>
+        <div className="formula">μⱼ = 1/m Σᵢ xⱼ⁽ⁱ⁾<br/>σⱼ² = 1/m Σᵢ (xⱼ⁽ⁱ⁾ − μⱼ)²</div>
+        <div className="panel-subtitle">Collaborative Filtering</div>
+        <div className="formula">min Σ(r(i,j)=1) (θ⁽ʲ⁾ᵀx⁽ⁱ⁾ − y⁽ⁱ'ʲ⁾)²<br/>+ λ(Σ||θ⁽ʲ⁾||² + Σ||x⁽ⁱ⁾||²)</div>
+        <p>Learn user preferences θ and item features x simultaneously. Predicted rating: θᵀx.</p>
+        <ul className="info-list">
+          <li>Content-based: uses item features</li>
+          <li>Collaborative: uses user-item matrix</li>
+          <li>Matrix factorization: R ≈ XΘᵀ</li>
+        </ul>
+      </div>
+      <div className="panel">
+        <div className="panel-title">Visualization</div>
+        <div className="btn-group">
+          <button className={`btn ${view === 'anomaly' ? 'active' : ''}`} onClick={() => setView('anomaly')}>Anomaly Detection</button>
+          <button className={`btn ${view === 'recommender' ? 'active' : ''}`} onClick={() => setView('recommender')}>Recommender</button>
+        </div>
+        {view === 'anomaly' && (
+          <>
+            <div className="slider-row">
+              <span className="slider-label">ε threshold</span>
+              <input type="range" min="0.001" max="0.1" step="0.001" value={epsilon}
+                onChange={e => setEpsilon(parseFloat(e.target.value))} />
+              <span className="slider-val">{epsilon.toFixed(3)}</span>
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} className="svg-wrap">
+              <GridLines W={W} H={H} mx={mx} my={my} />
+              <Axes W={W} H={H} mx={mx} my={my} xlabel="x₁" ylabel="x₂" />
+              {/* Gaussian contours */}
+              {[1.0, 1.8, 2.8, 4.0, 5.5].map((scale, ci) => {
+                const rx = linScale(sigma[0] * scale, 0, 1, 0, W - 2 * mx);
+                const ry = linScale(sigma[1] * scale, 0, 1, 0, H - 2 * my);
+                const cx = linScale(mu[0], 0, 1, mx, W - mx);
+                const cy = linScale(1 - mu[1], 0, 1, my, H - my);
+                return <ellipse key={ci} cx={cx} cy={cy} rx={rx} ry={ry}
+                  fill="none" stroke={`rgba(14,165,233,${0.35 - ci * 0.06})`}
+                  strokeWidth={1.5 - ci * 0.2} />;
+              })}
+              {points.map((p, i) => {
+                const cx = linScale(p.x, 0, 1, mx, W - mx);
+                const cy = linScale(1 - p.y, 0, 1, my, H - my);
+                const isAnomaly = gaussianP(p.x, p.y) < epsilon * 0.1;
+                return (
+                  <g key={i}>
+                    {isAnomaly && <circle cx={cx} cy={cy} r="10" fill="rgba(248,113,113,0.2)"
+                      stroke="#f87171" strokeWidth="1.5" />}
+                    <circle cx={cx} cy={cy} r="4.5"
+                      fill={isAnomaly ? '#f87171' : '#0ea5e9'} fillOpacity="0.85"
+                      stroke={isAnomaly ? '#fca5a5' : '#38bdf8'} strokeWidth="1" />
+                  </g>
+                );
+              })}
+            </svg>
+            <div className="anomaly-count">Detected anomalies: <span>{anomalies.length}</span> / {points.length}</div>
+          </>
+        )}
+        {view === 'recommender' && (
+          <>
+            <p style={{marginTop:6, marginBottom:6}}>Collaborative filtering: gold = known rating, italic = predicted.</p>
+            <table className="rec-table">
+              <thead>
+                <tr>
+                  <th>User \ Movie</th>
+                  {movies.map(m => <th key={m}>{m}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u, ui) => (
+                  <tr key={u}>
+                    <th>{u}</th>
+                    {movies.map((m, mi) => {
+                      const known = ratings[ui][mi];
+                      const pred = predicted[ui][mi];
+                      if (known !== null) {
+                        return <td key={mi} className="known">{'★'.repeat(known)}</td>;
+                      } else if (pred !== null) {
+                        return <td key={mi} className="predicted">{pred.toFixed(1)}★</td>;
+                      } else {
+                        return <td key={mi} style={{color:'#334155'}}>—</td>;
+                      }
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p style={{marginTop:8, fontSize:'0.75rem'}}>Gold stars = actual ratings. Italic values = model predictions via matrix factorization.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter Metadata ───────────────────────────────────────────────────────
+const CHAPTERS = [
+  { num: 1, title: 'Introduction to ML', component: Ch1 },
+  { num: 2, title: 'Linear Regression', component: Ch2 },
+  { num: 3, title: 'Logistic Regression & Regularization', component: Ch3 },
+  { num: 4, title: 'Neural Networks: Representation', component: Ch4 },
+  { num: 5, title: 'Neural Networks: Learning', component: Ch5 },
+  { num: 6, title: 'Evaluating & Improving Models', component: Ch6 },
+  { num: 7, title: 'Support Vector Machines', component: Ch7 },
+  { num: 8, title: 'K-Means & PCA', component: Ch8 },
+  { num: 9, title: 'Anomaly Detection & Recommenders', component: Ch9 },
+];
+
+// ── Sidebar ────────────────────────────────────────────────────────────────
+function Sidebar({ current, onSelect }) {
+  return (
+    <div className="sidebar">
+      <div className="sidebar-section">Chapters</div>
+      {CHAPTERS.map(ch => (
+        <div key={ch.num}
+          className={`sidebar-link ${current === ch.num ? 'active' : ''}`}
+          onClick={() => onSelect(ch.num)}>
+          <span className="ch-num">Chapter {ch.num}</span>
+          {ch.title}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Header ─────────────────────────────────────────────────────────────────
+function Header({ current, onPrev, onNext }) {
+  return (
+    <div className="header">
+      <div className="header-title">
+        🔬 Scientific Atlas
+        <span>Stanford Machine Learning</span>
+      </div>
+      <div className="header-nav">
+        <button className="nav-btn" onClick={onPrev} disabled={current === 1}>◀ Prev</button>
+        <span className="chapter-indicator">Ch {current} / 9</span>
+        <button className="nav-btn" onClick={onNext} disabled={current === 9}>Next ▶</button>
+      </div>
+    </div>
+  );
+}
+
+// ── App ────────────────────────────────────────────────────────────────────
+function App() {
+  const [current, setCurrent] = useState(1);
+  const ch = CHAPTERS[current - 1];
+  const Chapter = ch.component;
+  return (
+    <>
+      <Header current={current}
+        onPrev={() => setCurrent(c => Math.max(1, c - 1))}
+        onNext={() => setCurrent(c => Math.min(9, c + 1))} />
+      <Sidebar current={current} onSelect={setCurrent} />
+      <div className="main">
+        <Chapter key={current} />
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
